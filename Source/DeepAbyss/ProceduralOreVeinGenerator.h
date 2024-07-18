@@ -26,7 +26,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mesh")
-	UProceduralMeshComponent* ProceduralMesh;
+	UProceduralMeshComponent* RealtimeMesh;
 
 	void GenerateOreVeins();
 

@@ -8,11 +8,10 @@
 // Sets default values
 AProceduralOreVeinGenerator::AProceduralOreVeinGenerator()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
-	ProceduralMesh = CreateDefaultSubobject<UProceduralMeshComponent>("Mesh");
-	RootComponent = ProceduralMesh;
+	RealtimeMesh = CreateDefaultSubobject<UProceduralMeshComponent>("Mesh");
+	RootComponent = RealtimeMesh;
 }
 
 // Called when the game starts or when spawned
@@ -69,7 +68,7 @@ void AProceduralOreVeinGenerator::GenerateOreVeins()
     TArray<FLinearColor> VertexColors;
 
     // Create the mesh section
-    ProceduralMesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
+    RealtimeMesh->CreateMeshSection_LinearColor(0, Vertices, Triangles, Normals, UVs, VertexColors, Tangents, true);
 }
 
 void AProceduralOreVeinGenerator::GenerateCube(TArray<FVector>& Vertices, TArray<int32>& Triangles, FVector Location, float Size)
