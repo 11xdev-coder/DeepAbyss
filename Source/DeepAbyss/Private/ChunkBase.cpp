@@ -9,19 +9,22 @@
 #include "Components/DynamicMeshComponent.h"
 #include "DeepAbyss/FastNoiseLite.h"
 #include "DynamicMesh/DynamicMesh3.h"
+#include "DynamicMesh/MeshAttributeUtil.h"
 
 // Sets default values
 AChunkBase::AChunkBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
-	Mesh = CreateDefaultSubobject<UProceduralMeshComponent>("Mesh");
+	SetActorEnableCollision(true);
+	
+	//Mesh = CreateDefaultSubobject<UProceduralMeshComponent>("Mesh");
 	DynamicMesh = CreateDefaultSubobject<UDynamicMeshComponent>("DynamicMesh");
 	Noise = new FastNoiseLite();	
 
-	Mesh->SetCastShadow(false);
+	//Mesh->SetCastShadow(false);
 
-	SetRootComponent(Mesh);
+	SetRootComponent(DynamicMesh);
 }
 
 // Called when the game starts or when spawned
@@ -52,10 +55,27 @@ void AChunkBase::GenerateHeightMap()
 
 void AChunkBase::ApplyMesh()
 {
-	Mesh->SetMaterial(0, Material);
+	//Mesh->SetMaterial(0, Material);
+	
+	// enable proper UVs
+	DynamicMeshDataHolder.EnableAttributes();
+	DynamicMeshDataHolder.EnableVertexUVs(FVector2f::Zero());
+	CopyVertexUVsToOverlay(DynamicMeshDataHolder, *DynamicMeshDataHolder.Attributes()->PrimaryUV()); // assuming we already generated vertices
+	CopyVertexNormalsToOverlay(DynamicMeshDataHolder, *DynamicMeshDataHolder.Attributes()->PrimaryNormals());
+	
+	// enable Complex As Simple collision
+	DynamicMesh->bEnableComplexCollision = true;
+	DynamicMesh->CollisionType = CTF_UseComplexAsSimple;
+	DynamicMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+	// set material
+	DynamicMesh->SetMaterial(0, Material);
+	
+	// create our mesh
 	DynamicMesh->SetMesh(MoveTemp(DynamicMeshDataHolder));
+	
 	//Mesh->CreateMeshSection(0, MeshData.Vertices, MeshData.Triangles, MeshData.Normals, MeshData.UVs,
-		//MeshData.Colors, TArray<FProcMeshTangent>() , true);
+	//	MeshData.Colors, TArray<FProcMeshTangent>() , true);
 }
 
 void AChunkBase::ClearMeshData()

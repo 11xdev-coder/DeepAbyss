@@ -8,6 +8,7 @@
 #include "VoxelFunctionLibrary.generated.h"
 
 
+struct FMarchingCubesData;
 /**
  * 
  */
@@ -25,5 +26,16 @@ public:
 	static void CarveRadiusAtLocation(float Radius, FVector Location, TArray<AMarchingCubesChunk*> OverlappingChunks, UMaterialInstance* CarveMaterial);
 
 	UFUNCTION(BlueprintPure, Category = "Array")
-	static bool IsArrayEqualToElement(TArray<float> Arr, float Element);
+	static bool IsArrayEqualToElement(TArray<float> Arr, float Element);	
+
+	// marching cubes data
+	const static int VertexOffset[8][3];
+
+	const static int EdgeConnection[12][2];        
+
+	const static float EdgeDirection[12][3];
+
+	const static int CubeEdgeFlags[256];
+
+	const static int TriangleConnectionTable[256][16];
 };

@@ -80,6 +80,7 @@ void AMarchingCubesChunk::March(int X, int Y, int Z, const float CubeVoxelValues
 {
 	int VertexMask = 0;
 	FVector EdgeVertices[12];
+	FVector2D EdgeUVs[12];
 
 	// compute vertex mask
 	// check 8 cube values
@@ -100,9 +101,18 @@ void AMarchingCubesChunk::March(int X, int Y, int Z, const float CubeVoxelValues
 			const float Offset = Interpolate ? GetInterpolationOffset(CubeVoxelValues[EdgeConnection[i][0]],
 				CubeVoxelValues[EdgeConnection[i][1]]) : 0.5f;
 
-			EdgeVertices[i].X = X + (VertexOffset[EdgeConnection[i][0]][0] + Offset * EdgeDirection[i][0]);
-			EdgeVertices[i].Y = Y + (VertexOffset[EdgeConnection[i][0]][1] + Offset * EdgeDirection[i][1]);
-			EdgeVertices[i].Z = Z + (VertexOffset[EdgeConnection[i][0]][2] + Offset * EdgeDirection[i][2]);
+			FVector VertexPosition(
+			   X + (VertexOffset[EdgeConnection[i][0]][0] + Offset * EdgeDirection[i][0]),
+			   Y + (VertexOffset[EdgeConnection[i][0]][1] + Offset * EdgeDirection[i][1]),
+			   Z + (VertexOffset[EdgeConnection[i][0]][2] + Offset * EdgeDirection[i][2])
+		    );
+
+			EdgeVertices[i] = VertexPosition;
+			// EdgeVertices[i].X = X + (VertexOffset[EdgeConnection[i][0]][0] + Offset * EdgeDirection[i][0]);
+			// EdgeVertices[i].Y = Y + (VertexOffset[EdgeConnection[i][0]][1] + Offset * EdgeDirection[i][1]);
+			// EdgeVertices[i].Z = Z + (VertexOffset[EdgeConnection[i][0]][2] + Offset * EdgeDirection[i][2]);
+
+			EdgeUVs[i] = FVector2D(VertexPosition.X / 100.0f, VertexPosition.Y / 100.0f);
 		}
 	}
 
@@ -119,33 +129,51 @@ void AMarchingCubesChunk::March(int X, int Y, int Z, const float CubeVoxelValues
 
 		Normal.Normalize();	
 		
-		MeshData.Vertices.Append({V1, V2, V3});
+		// MeshData.Vertices.Append({V1, V2, V3});
+		//
+		// MeshData.Triangles.Append({
+		// 	VertexCount + TriangleOrder[0],
+		// 	VertexCount + TriangleOrder[1],
+		// 	VertexCount + TriangleOrder[2],
+		// });
+		//
+		// MeshData.Normals.Append({
+		// 	Normal,
+		// 	Normal,
+		// 	Normal
+		// });
+		//
+		// MeshData.Colors.Append({
+		// 	Color,
+		// 	Color,
+		// 	Color
+		// });
+
 		
-		MeshData.Triangles.Append({
-			VertexCount + TriangleOrder[0],
+		// vertices
+		int32 VIndex1 = DynamicMeshDataHolder.AppendVertex(V1);
+		int32 VIndex2 = DynamicMeshDataHolder.AppendVertex(V2);
+		int32 VIndex3 = DynamicMeshDataHolder.AppendVertex(V3);
+
+		// UVs (cubic mapping)
+		auto UV1 = EdgeUVs[TriangleConnectionTable[VertexMask][3 * i]];
+		auto UV2 = EdgeUVs[TriangleConnectionTable[VertexMask][3 * i + 1]];
+		auto UV3 = EdgeUVs[TriangleConnectionTable[VertexMask][3 * i + 2]];
+
+		
+		DynamicMeshDataHolder.AppendTriangle(VertexCount + TriangleOrder[0],
 			VertexCount + TriangleOrder[1],
-			VertexCount + TriangleOrder[2],
-		});
-		
-		MeshData.Normals.Append({
-			Normal,
-			Normal,
-			Normal
-		});
-		
-		MeshData.Colors.Append({
-			Color,
-			Color,
-			Color
-		});
+			VertexCount + TriangleOrder[2]);
 
+		DynamicMeshDataHolder.SetVertexNormal(VIndex1, (FVector3f)Normal);
+		DynamicMeshDataHolder.SetVertexNormal(VIndex2, (FVector3f)Normal);
+		DynamicMeshDataHolder.SetVertexNormal(VIndex3, (FVector3f)Normal);
+
+		DynamicMeshDataHolder.SetVertexUV(VIndex1, FVector2f(UV1.X, UV1.Y));
+		DynamicMeshDataHolder.SetVertexUV(VIndex2, FVector2f(UV2.X, UV2.Y));
+		DynamicMeshDataHolder.SetVertexUV(VIndex3, FVector2f(UV3.X, UV3.Y));
+		
 		VertexCount += 3;
-		
-		int32 VIndex1 = DynamicMeshDataHolder.AppendVertex((FVector3d)V1);
-		int32 VIndex2 = DynamicMeshDataHolder.AppendVertex((FVector3d)V2);
-		int32 VIndex3 = DynamicMeshDataHolder.AppendVertex((FVector3d)V3);
-
-		DynamicMeshDataHolder.AppendTriangle(VIndex1, VIndex2, VIndex3);
 	}
 }
 
