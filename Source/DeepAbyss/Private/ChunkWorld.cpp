@@ -18,15 +18,15 @@ void AChunkWorld::BeginPlay()
 {
 	Super::BeginPlay();
 
-	for (int x = -DrawDistance; x <= DrawDistance; ++x)
+	if(Generate)
 	{
-		for (int y = -DrawDistance; y <= DrawDistance; ++y)
+		for (int x = -DrawDistance; x <= DrawDistance; ++x)
 		{
-			for (int z = -DrawDistance; z <= DrawDistance; ++z)
+			for (int y = -DrawDistance; y <= DrawDistance; ++y) 
 			{
 				auto Transform = FTransform(
 					FRotator::ZeroRotator,
-					FVector(x * ChunkSize * 100, y * ChunkSize * 100, z * ChunkSize * 100),
+					FVector(x * ChunkSize.X * 100, y * ChunkSize.Y * 100, ChunkSize.Z * 100), // z is vertical
 					FVector::OneVector
 				);
 
@@ -39,10 +39,10 @@ void AChunkWorld::BeginPlay()
 				SpawnedChunk->ChunkSize = ChunkSize;
 				SpawnedChunk->Frequency = Frequency;
 				SpawnedChunk->Material = ChunkMaterial;
-				
+			
 				UGameplayStatics::FinishSpawningActor(SpawnedChunk, Transform);
-			}			
+			}	
 		}
-	}
+	}	
 }
 

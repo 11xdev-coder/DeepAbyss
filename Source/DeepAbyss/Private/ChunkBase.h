@@ -4,11 +4,18 @@
 
 #include "CoreMinimal.h"
 #include "FChunkMeshData.h"
+#include "RealtimeMeshActor.h"
 #include "GameFramework/Actor.h"
+#include "Components/DynamicMeshComponent.h"
+#include "DynamicMesh/DynamicMesh3.h"
 #include "ChunkBase.generated.h"
 
-class UProceduralMeshComponent;
+class URealtimeMeshComponent;
 class FastNoiseLite;
+class UVoxelFunctionLibrary;
+class URealtimeMeshSimple;
+class UProceduralMeshComponent;
+class UDynamicMeshComponent;
 
 UCLASS()
 class AChunkBase : public AActor
@@ -19,25 +26,31 @@ public:
 	// Sets default values for this actor's properties
 	AChunkBase();
 
-	UPROPERTY(EditAnywhere, Category = "Chunk Settings")
-	int ChunkSize = 32;
+	FIntVector ChunkSize = FIntVector(256, 256, 256);
 
 	float Frequency;
 	TObjectPtr<UMaterialInterface> Material;
+	
+	FChunkMeshData MeshData;
 
+	virtual void GenerateMesh();
+	
+	void ApplyMesh();
+
+	void ClearMeshData();
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	virtual void GenerateHeightMap();
 
-	virtual void GenerateMesh();
-
 	TObjectPtr<UProceduralMeshComponent> Mesh;
+	TObjectPtr<UDynamicMeshComponent> DynamicMesh;
+	FDynamicMesh3 DynamicMeshDataHolder;
 	TObjectPtr<FastNoiseLite> Noise;
-	FChunkMeshData MeshData;
+	TObjectPtr<UVoxelFunctionLibrary> Lib;
+	
 	int VertexCount = 0;	
-
-private:	
-	void ApplyMesh() const;
+	
 };

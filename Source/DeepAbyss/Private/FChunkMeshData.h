@@ -14,4 +14,15 @@ public:
 	TArray<FVector> Normals;
 	TArray<FVector2D> UVs;
 	TArray<FColor> Colors;
+
+	void Clear();
 };
+
+inline void FChunkMeshData::Clear()
+{
+	Vertices.Empty();
+	Triangles.Empty();
+	Normals.Empty();
+	Colors.Empty();
+	UVs.Empty();
+}

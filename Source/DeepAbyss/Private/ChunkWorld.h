@@ -17,13 +17,16 @@ public:
 	AChunkWorld();
 
 	UPROPERTY(EditInstanceOnly, Category = "Chunk World")
+	bool Generate = true;
+
+	UPROPERTY(EditInstanceOnly, Category = "Chunk World")
 	TSubclassOf<AChunkBase> ChunkType;
 
 	UPROPERTY(EditInstanceOnly, Category = "Chunk World")
 	int DrawDistance = 5;
 
 	UPROPERTY(EditInstanceOnly, Category = "Chunk World")
-	int ChunkSize = 32;
+	FIntVector ChunkSize = FIntVector(256, 256, 256);
 
 	UPROPERTY(EditInstanceOnly, Category = "Chunk World")
 	TObjectPtr<UMaterialInstance> ChunkMaterial;

@@ -4,7 +4,11 @@
 #include "ChunkBase.h"
 
 #include "ProceduralMeshComponent.h"
+#include "RealtimeMeshComponent.h"
+#include "RealtimeMeshSimple.h"
+#include "Components/DynamicMeshComponent.h"
 #include "DeepAbyss/FastNoiseLite.h"
+#include "DynamicMesh/DynamicMesh3.h"
 
 // Sets default values
 AChunkBase::AChunkBase()
@@ -12,6 +16,7 @@ AChunkBase::AChunkBase()
 	PrimaryActorTick.bCanEverTick = false;
 
 	Mesh = CreateDefaultSubobject<UProceduralMeshComponent>("Mesh");
+	DynamicMesh = CreateDefaultSubobject<UDynamicMeshComponent>("DynamicMesh");
 	Noise = new FastNoiseLite();	
 
 	Mesh->SetCastShadow(false);
@@ -45,12 +50,20 @@ void AChunkBase::GenerateHeightMap()
 	
 }
 
-void AChunkBase::ApplyMesh() const
+void AChunkBase::ApplyMesh()
 {
 	Mesh->SetMaterial(0, Material);
-	Mesh->CreateMeshSection(0, MeshData.Vertices, MeshData.Triangles, MeshData.Normals, MeshData.UVs,
-		MeshData.Colors, TArray<FProcMeshTangent>() , true);
+	DynamicMesh->SetMesh(MoveTemp(DynamicMeshDataHolder));
+	//Mesh->CreateMeshSection(0, MeshData.Vertices, MeshData.Triangles, MeshData.Normals, MeshData.UVs,
+		//MeshData.Colors, TArray<FProcMeshTangent>() , true);
 }
+
+void AChunkBase::ClearMeshData()
+{
+	MeshData.Clear();
+	VertexCount = 0;
+}
+
 
 
 

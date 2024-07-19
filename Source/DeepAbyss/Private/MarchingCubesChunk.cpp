@@ -4,11 +4,15 @@
 #include "MarchingCubesChunk.h"
 
 #include "ProceduralMeshComponent.h"
+#include "RealtimeMeshSimple.h"
+#include "VoxelFunctionLibrary.h"
+#include "Components/BoxComponent.h"
 #include "DeepAbyss/FastNoiseLite.h"
+#include "DynamicMesh/DynamicMesh3.h"
 
 AMarchingCubesChunk::AMarchingCubesChunk()
 {
-	VoxelValues.SetNum((ChunkSize + 1) * (ChunkSize + 1) * (ChunkSize + 1));
+	VoxelValues.SetNum((ChunkSize.X + 1) * (ChunkSize.Y + 1) * (ChunkSize.Z + 1));
 }
 
 void AMarchingCubesChunk::BeginPlay()
@@ -18,6 +22,8 @@ void AMarchingCubesChunk::BeginPlay()
 
 void AMarchingCubesChunk::GenerateMesh()
 {
+	ClearMeshData();
+	
 	// triangle order
 	if (SurfaceLevel > 0.0f)
 	{
@@ -35,11 +41,11 @@ void AMarchingCubesChunk::GenerateMesh()
 	// march
 	float Cube[8]; // 8 vertices
 
-	for (int X = 0; X < ChunkSize; ++X)
+	for (int X = 0; X < ChunkSize.X; ++X)
 	{
-		for (int Y = 0; Y < ChunkSize; ++Y)
+		for (int Y = 0; Y < ChunkSize.Y; ++Y)
 		{
-			for (int Z = 0; Z < ChunkSize; ++Z)
+			for (int Z = 0; Z < ChunkSize.Z; ++Z)
 			{
 				for (int i = 0; i < 8; ++i) // each vertex
 				{
@@ -56,18 +62,19 @@ void AMarchingCubesChunk::GenerateHeightMap()
 {
 	const auto ActorLocation = GetActorLocation() / 100;
 
-	for (int x = 0; x <= ChunkSize; ++x)
+	for (int x = 0; x <= ChunkSize.X; ++x)
 	{
-		for (int y = 0; y <= ChunkSize; ++y)
+		for (int y = 0; y <= ChunkSize.Y; ++y)
 		{
-			for (int z = 0; z <= ChunkSize; ++z)
+			for (int z = 0; z <= ChunkSize.Z; ++z)
 			{
 				VoxelValues[GetVoxelIndex(x, y, z)] = Noise->GetNoise(x + ActorLocation.X,
 																		y + ActorLocation.Y, z + ActorLocation.Z);
 			}
 		}
-	}	
+	}
 }
+
 
 void AMarchingCubesChunk::March(int X, int Y, int Z, const float CubeVoxelValues[8])
 {
@@ -110,22 +117,22 @@ void AMarchingCubesChunk::March(int X, int Y, int Z, const float CubeVoxelValues
 		auto Normal = FVector::CrossProduct(V2 - V1, V3 - V1);
 		auto Color = FColor::MakeRandomColor();
 
-		Normal.Normalize();
-
+		Normal.Normalize();	
+		
 		MeshData.Vertices.Append({V1, V2, V3});
-
+		
 		MeshData.Triangles.Append({
 			VertexCount + TriangleOrder[0],
 			VertexCount + TriangleOrder[1],
 			VertexCount + TriangleOrder[2],
 		});
-
+		
 		MeshData.Normals.Append({
 			Normal,
 			Normal,
 			Normal
 		});
-
+		
 		MeshData.Colors.Append({
 			Color,
 			Color,
@@ -133,8 +140,45 @@ void AMarchingCubesChunk::March(int X, int Y, int Z, const float CubeVoxelValues
 		});
 
 		VertexCount += 3;
+		
+		int32 VIndex1 = DynamicMeshDataHolder.AppendVertex((FVector3d)V1);
+		int32 VIndex2 = DynamicMeshDataHolder.AppendVertex((FVector3d)V2);
+		int32 VIndex3 = DynamicMeshDataHolder.AppendVertex((FVector3d)V3);
+
+		DynamicMeshDataHolder.AppendTriangle(VIndex1, VIndex2, VIndex3);
 	}
 }
+
+// void AMarchingCubesChunk::OnGenerateMesh_Implementation()
+// {
+// 	URealtimeMeshSimple* InitializedMesh = GetRealtimeMeshComponent()->InitializeRealtimeMesh<URealtimeMeshSimple>();
+// 	FRealtimeMeshStreamSet StreamSet;
+//
+// 	TRealtimeMeshBuilderLocal<int16, FPackedNormal, FVector2DHalf, 1> Builder(StreamSet);
+//
+// 	Builder.EnableTangents();
+// 	Builder.EnableTexCoords();
+// 	Builder.EnableColors();
+//
+// 	Builder.AddVertex(FVector3f(V1.X, V1.Y, V1.Z)).SetNormal(FVector3f(Normal.X, Normal.Y, Normal.Z)).SetColor(Color);
+// 	Builder.AddVertex(FVector3f(V2.X, V2.Y, V2.Z)).SetNormal(FVector3f(Normal.X, Normal.Y, Normal.Z)).SetColor(Color);
+// 	Builder.AddVertex(FVector3f(V3.X, V3.Y, V3.Z)).SetNormal(FVector3f(Normal.X, Normal.Y, Normal.Z)).SetColor(Color);
+// 	
+// 	Builder.AddTriangle(
+// 		VertexCount + TriangleOrder[0],
+// 		VertexCount + TriangleOrder[1],
+// 		VertexCount + TriangleOrder[2]
+// 	);
+// 		
+// 	VertexCount += 3;
+//
+// 	InitializedMesh->SetupMaterialSlot(0, "Primary");
+//
+// 	const FRealtimeMeshSectionGroupKey GroupKey = FRealtimeMeshSectionGroupKey::Create(0, FName("Cave"));
+// 	const FRealtimeMeshSectionKey PolyGroupSectionKey = FRealtimeMeshSectionKey::CreateForPolyGroup(GroupKey, 0);
+// 	InitializedMesh->CreateSectionGroup(GroupKey, StreamSet);
+// 	InitializedMesh->UpdateSectionConfig(PolyGroupSectionKey, FRealtimeMeshSectionConfig(ERealtimeMeshSectionDrawType::Static, 0));
+// }
 
 float AMarchingCubesChunk::GetInterpolationOffset(float V1, float V2) const
 {
@@ -145,7 +189,7 @@ float AMarchingCubesChunk::GetInterpolationOffset(float V1, float V2) const
 
 int AMarchingCubesChunk::GetVoxelIndex(int X, int Y, int Z) const
 {
-	return Z * (ChunkSize + 1) * (ChunkSize + 1) + Y * (ChunkSize + 1) + X;
+	return (Z * (ChunkSize.X + 1) * (ChunkSize.Y + 1)) + Y * (ChunkSize.X + 1) + X;
 }
 
 

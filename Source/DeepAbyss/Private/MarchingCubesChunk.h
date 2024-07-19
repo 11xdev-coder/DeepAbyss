@@ -4,10 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "ChunkBase.h"
+#include "DynamicMesh/DynamicMesh3.h"
 #include "MarchingCubesChunk.generated.h"
-
-class FastNoiseLite;
-class UProceduralMeshComponent;
 
 UCLASS()
 class AMarchingCubesChunk : public AChunkBase
@@ -23,21 +21,21 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Marching cubes Settings")
 	bool Interpolate = true;
 
+	TArray<float> VoxelValues;
+	
+	int GetVoxelIndex(int X, int Y, int Z) const;
+
+	virtual void GenerateMesh() override;
+
 protected:
 	virtual void BeginPlay() override;
 	
 	virtual void GenerateHeightMap() override;
-
-	virtual void GenerateMesh() override;
 	
 private:	
-	TArray<float> VoxelValues;
-
 	int TriangleOrder[3] = {0, 1, 2};
 
 	void March(int X, int Y, int Z, const float CubeVoxelValues[8]);
-
-	int GetVoxelIndex(int X, int Y, int Z) const;
 
 	float GetInterpolationOffset(float V1, float V2) const;
 
