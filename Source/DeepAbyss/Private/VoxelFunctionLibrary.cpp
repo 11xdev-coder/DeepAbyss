@@ -3,73 +3,135 @@
 
 #include "VoxelFunctionLibrary.h"
 
+#include "ChunkWorld.h"
+#include "DynamicMesh/MeshTransforms.h"
+#include "DynamicMeshActor.h"
 #include "MarchingCubesChunk.h"
-#include "ProceduralMeshComponent.h"
-#include "DeepAbyss/FastNoiseLite.h"
+#include "DynamicMesh/MeshNormals.h"
+#include "Operations/MeshBoolean.h"
 
-void UVoxelFunctionLibrary::CarveRadiusAtLocation(float Radius, FVector Location, TArray<AMarchingCubesChunk*> OverlappingChunks,
+void UVoxelFunctionLibrary::CarveRadiusAtLocation(AChunkWorld* World, float Radius, FVector Location, TArray<AChunkBase*> OverlappingChunks,
                                                   UMaterialInstance* CarveMaterial)
 {
-	for (AMarchingCubesChunk* Chunk : OverlappingChunks)
+	TSet<AChunkBase*> ChunksToUpdate;
+
+	for (AChunkBase* Chunk : OverlappingChunks)
 	{
 		if (!Chunk) continue;
-
-		// Perform carving in a separate thread
-		Async(EAsyncExecution::Thread, [=]()
+		FIntVector ChunkSize = Chunk->ChunkSize;
+	
+		AMarchingCubesChunk* MarchingCubesChunk = Cast<AMarchingCubesChunk>(Chunk);
+		if (!MarchingCubesChunk) continue;
+	
+		ChunksToUpdate.Add(Chunk);
+	
+		// Get the chunk's coordinates
+		FVector ChunkLocation = Chunk->GetActorLocation();
+		int ChunkX = FMath::RoundToInt(ChunkLocation.X / (ChunkSize.X * 100));
+		int ChunkY = FMath::RoundToInt(ChunkLocation.Y / (ChunkSize.Y * 100));
+	
+		// Get neighboring chunks
+		TArray<AChunkBase*> NeighboringChunks = World->GetNeighboringChunks(ChunkX, ChunkY);
+		for (AChunkBase* Neighbor : NeighboringChunks)
 		{
-			FVector ChunkLocation = Chunk->GetActorLocation();
-			FVector LocalLocation = Location - ChunkLocation;
-			FIntVector ChunkSize = Chunk->ChunkSize;
-			float VoxelSize = 100.0f;
-			int SubChunkSize = 16; // Size of sub-chunks
-
-			bool Modified = false;
-
-			for (int x = 0; x <= ChunkSize.X; x += SubChunkSize)
-			{
-				for (int y = 0; y <= ChunkSize.Y; y += SubChunkSize)
-				{
-					for (int z = 0; z <= ChunkSize.Z; z += SubChunkSize)
-					{
-						bool SubChunkModified = false;
-
-						for (int dx = 0; dx < SubChunkSize; ++dx)
-						{
-							for (int dy = 0; dy < SubChunkSize; ++dy)
-							{
-								for (int dz = 0; dz < SubChunkSize; ++dz)
-								{
-									int vx = x + dx;
-									int vy = y + dy;
-									int vz = z + dz;
-									if (vx > ChunkSize.X || vy > ChunkSize.Y || vz > ChunkSize.Z) continue;
-
-									FVector VoxelPosition = FVector(vx, vy, vz) * VoxelSize;
-									if (FVector::Dist(VoxelPosition, LocalLocation) < Radius)
-									{
-										int VoxelIndex = Chunk->GetVoxelIndex(vx, vy, vz);
-										Chunk->VoxelValues[VoxelIndex] = 0; // remove voxels that are in radius
-										SubChunkModified = true;
-										Modified = true;
-									}
-								}
-							}
-						}
-
-						if (SubChunkModified)
-						{
-							// Update the sub-chunk
-							Async(EAsyncExecution::TaskGraphMainThread, [=]()
-							{
-								Chunk->GenerateMesh(); // Ideally, only regenerate the affected sub-chunk
-								Chunk->ApplyMesh();
-							});
-						}
-					}
-				}
-			}
-		});
+			ChunksToUpdate.Add(Neighbor);
+		}
 	}
+
+
+    // Process all chunks to update
+    for (AChunkBase* Chunk : ChunksToUpdate)
+    {
+        if (!Chunk) continue;
+
+        AMarchingCubesChunk* MarchingCubesChunk = Cast<AMarchingCubesChunk>(Chunk);
+        if (!MarchingCubesChunk) continue;
+
+        FVector ChunkLocation = Chunk->GetActorLocation();
+        FVector LocalLocation = Location - ChunkLocation;
+
+        bool bNeedsUpdate = false;
+	
+        // Check if this chunk intersects with the carving sphere
+        for (int x = 0; x <= MarchingCubesChunk->ChunkSize.X; ++x)
+        {
+            for (int y = 0; y <= MarchingCubesChunk->ChunkSize.Y; ++y)
+            {
+                for (int z = 0; z <= MarchingCubesChunk->ChunkSize.Z; ++z)
+                {
+                	FVector VoxelPosition = FVector(x, y, z) * 100;
+                	
+                	float DistanceSquared = FVector::DistSquared(VoxelPosition, LocalLocation);
+                	float RadiusSquared = FMath::Square(Radius);
+                    
+                    if (DistanceSquared <= RadiusSquared)
+                    {
+                        int VoxelIndex = MarchingCubesChunk->GetVoxelIndex(x, y, z);
+                        MarchingCubesChunk->VoxelValues[VoxelIndex] -= 100;
+                        bNeedsUpdate = true;
+                    }
+                }
+            }
+        }
+
+        if (bNeedsUpdate)
+        {
+            MarchingCubesChunk->GenerateMesh();
+            MarchingCubesChunk->ApplyMesh();
+        }
+    }
+}
+
+
+void UVoxelFunctionLibrary::GenerateSphere(FDynamicMesh3& Mesh, float Radius, FVector LocalLocation)
+{
+	// Function to generate a sphere mesh at a given location
+	const int NumSegments = 16; // Increase for a more detailed sphere
+
+	Mesh.Clear();
+	UE::Geometry::FDynamicMeshEditor Editor(&Mesh);
+
+	// Loop to create sphere vertices and faces
+	for (int lat = 0; lat <= NumSegments; ++lat)
+	{
+		float theta = lat * PI / NumSegments;
+		float sinTheta = FMath::Sin(theta);
+		float cosTheta = FMath::Cos(theta);
+
+		for (int lon = 0; lon <= NumSegments; ++lon)
+		{
+			float phi = lon * 2 * PI / NumSegments;
+			float sinPhi = FMath::Sin(phi);
+			float cosPhi = FMath::Cos(phi);
+
+			FVector3d Position(
+				LocalLocation.X + Radius * sinTheta * cosPhi,
+				LocalLocation.Y + Radius * sinTheta * sinPhi,
+				LocalLocation.Z + Radius * cosTheta
+			);
+
+			int32 VertexID = Mesh.AppendVertex(Position);
+
+			// Skip creating faces for the last latitude line
+			if (lat < NumSegments && lon < NumSegments)
+			{
+				int32 NextLat = (lat + 1);
+				int32 NextLon = (lon + 1);
+
+				int32 A = lat * (NumSegments + 1) + lon;
+				int32 B = NextLat * (NumSegments + 1) + lon;
+				int32 C = NextLat * (NumSegments + 1) + NextLon;
+				int32 D = lat * (NumSegments + 1) + NextLon;
+
+				// Create two triangles for each quad face
+				Mesh.AppendTriangle(A, B, C);
+				Mesh.AppendTriangle(A, C, D);
+			}
+		}
+	}
+
+	// Ensure normals are computed for the generated mesh
+	UE::Geometry::FMeshNormals::InitializeMeshToPerTriangleNormals(&Mesh);
 }
 
 bool UVoxelFunctionLibrary::IsArrayEqualToElement(TArray<float> Arr, float Element)

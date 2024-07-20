@@ -38,6 +38,8 @@ public:
 	void ApplyMesh();
 
 	void ClearMeshData();
+
+	TObjectPtr<UDynamicMeshComponent> DynamicMesh;
 	
 protected:
 	// Called when the game starts or when spawned
@@ -46,7 +48,7 @@ protected:
 	virtual void GenerateHeightMap();
 
 	TObjectPtr<UProceduralMeshComponent> Mesh;
-	TObjectPtr<UDynamicMeshComponent> DynamicMesh;
+	
 	FDynamicMesh3 DynamicMeshDataHolder;
 	TObjectPtr<FastNoiseLite> Noise;
 	TObjectPtr<UVoxelFunctionLibrary> Lib;

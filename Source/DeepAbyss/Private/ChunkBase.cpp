@@ -56,6 +56,12 @@ void AChunkBase::GenerateHeightMap()
 void AChunkBase::ApplyMesh()
 {
 	//Mesh->SetMaterial(0, Material);
+
+	// add basic vertices if there are none
+	if(DynamicMeshDataHolder.VertexCount() <= 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("EMPTY"));
+	}
 	
 	// enable proper UVs
 	DynamicMeshDataHolder.EnableAttributes();
@@ -67,6 +73,7 @@ void AChunkBase::ApplyMesh()
 	DynamicMesh->bEnableComplexCollision = true;
 	DynamicMesh->CollisionType = CTF_UseComplexAsSimple;
 	DynamicMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	DynamicMesh->SetCollisionProfileName(UCollisionProfile::BlockAllDynamic_ProfileName);
 
 	// set material
 	DynamicMesh->SetMaterial(0, Material);
@@ -81,6 +88,7 @@ void AChunkBase::ApplyMesh()
 void AChunkBase::ClearMeshData()
 {
 	MeshData.Clear();
+	DynamicMeshDataHolder.Clear();
 	VertexCount = 0;
 }
 

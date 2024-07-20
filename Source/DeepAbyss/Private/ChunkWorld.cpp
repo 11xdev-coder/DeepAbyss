@@ -3,6 +3,7 @@
 
 #include "ChunkWorld.h"
 
+#include "EngineUtils.h"
 #include "ShaderCompiler.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -11,7 +12,10 @@ AChunkWorld::AChunkWorld()
 {
 	PrimaryActorTick.bCanEverTick = false;
 
+	int NumChunks = (2 * DrawDistance + 1) * (2 * DrawDistance + 1);
+	Chunks.SetNum(NumChunks);
 }
+
 
 // Called when the game starts or when spawned
 void AChunkWorld::BeginPlay()
@@ -41,8 +45,47 @@ void AChunkWorld::BeginPlay()
 				SpawnedChunk->Material = ChunkMaterial;
 			
 				UGameplayStatics::FinishSpawningActor(SpawnedChunk, Transform);
+
+				Chunks[GetChunkIndex(x, y)] = SpawnedChunk;
 			}	
 		}
 	}	
 }
 
+int AChunkWorld::GetChunkIndex(int X, int Y)
+{
+	int OffsetX = X + DrawDistance;
+	int OffsetY = Y + DrawDistance;
+	return OffsetY * (2 * DrawDistance + 1) + OffsetX;
+}
+
+TArray<AChunkBase*> AChunkWorld::GetNeighboringChunks(int X, int Y)
+{
+	TArray<AChunkBase*> NeighboringChunks;
+	for (int dx = -1; dx <= 1; ++dx)
+	{
+		for (int dy = -1; dy <= 1; ++dy)
+		{
+			if (dx == 0 && dy == 0) continue; // Skip the center chunk
+
+			int NeighborX = X + dx;
+			int NeighborY = Y + dy;
+
+			// Ensure the neighbor indices are within the valid range
+			if (NeighborX >= -DrawDistance && NeighborX <= DrawDistance &&
+				NeighborY >= -DrawDistance && NeighborY <= DrawDistance)
+			{
+				int Index = GetChunkIndex(NeighborX, NeighborY);
+				if (Chunks.IsValidIndex(Index))
+				{
+					AChunkBase* NeighborChunk = Chunks[Index];
+					if (NeighborChunk)
+					{
+						NeighboringChunks.Add(NeighborChunk);
+					}
+				}
+			}
+		}
+	}
+	return NeighboringChunks;
+}

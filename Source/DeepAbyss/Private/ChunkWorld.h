@@ -16,6 +16,8 @@ public:
 	// Sets default values for this actor's properties
 	AChunkWorld();
 
+	TArray<AChunkBase*> Chunks;
+	
 	UPROPERTY(EditInstanceOnly, Category = "Chunk World")
 	bool Generate = true;
 
@@ -33,6 +35,10 @@ public:
 
 	UPROPERTY(EditInstanceOnly, Category = "Noise Settings")
 	float Frequency = 0.03f;
+
+	int GetChunkIndex(int X, int Y);
+
+	TArray<AChunkBase*> GetNeighboringChunks(int X, int Y);
 
 protected:
 	// Called when the game starts or when spawned

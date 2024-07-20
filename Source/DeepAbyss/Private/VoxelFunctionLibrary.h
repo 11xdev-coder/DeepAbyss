@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "ChunkBase.h"
+#include "ChunkWorld.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "VoxelFunctionLibrary.generated.h"
 
@@ -17,13 +18,11 @@ class UVoxelFunctionLibrary : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
 
-public:	
-	static void GenerateSphereVoxelValues(float Radius, FVector Center, TArray<float>& OutSphereVoxelValues, int ChunkSize, float VoxelSize);
-
-	static void IntegrateSphereVoxelValuesIntoChunk(TArray<float>& SphereVoxelValues, FVector Center, AMarchingCubesChunk* Chunk, float Radius, float VoxelSize);
-	
+public:		
 	UFUNCTION(BlueprintCallable, Category = "Carving")
-	static void CarveRadiusAtLocation(float Radius, FVector Location, TArray<AMarchingCubesChunk*> OverlappingChunks, UMaterialInstance* CarveMaterial);
+	static void CarveRadiusAtLocation(AChunkWorld* World, float Radius, FVector Location, TArray<AChunkBase*> OverlappingChunks, UMaterialInstance* CarveMaterial);
+
+	static void GenerateSphere(FDynamicMesh3& Mesh, float Radius, FVector LocalLocation);
 
 	UFUNCTION(BlueprintPure, Category = "Array")
 	static bool IsArrayEqualToElement(TArray<float> Arr, float Element);	
