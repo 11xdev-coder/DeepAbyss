@@ -8,9 +8,9 @@ public class DeepAbyss : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "RealtimeMeshComponent", "FastNoiseGenerator" });
+		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "RealtimeMeshComponent" });
 
-		PrivateDependencyModuleNames.AddRange(new string[] {"ProceduralMeshComponent", "RealtimeMeshComponent", "FastNoiseGenerator", 
+		PrivateDependencyModuleNames.AddRange(new string[] {"ProceduralMeshComponent", "RealtimeMeshComponent",
 			"GeometryFramework", "DynamicMesh", "GeometryCore"});
 
 		// Uncomment if you are using Slate UI

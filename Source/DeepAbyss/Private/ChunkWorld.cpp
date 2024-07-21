@@ -43,6 +43,7 @@ void AChunkWorld::BeginPlay()
 				SpawnedChunk->ChunkSize = ChunkSize;
 				SpawnedChunk->Frequency = Frequency;
 				SpawnedChunk->Material = ChunkMaterial;
+				SpawnedChunk->DefaultTintColor = DefaultTintColor;
 			
 				UGameplayStatics::FinishSpawningActor(SpawnedChunk, Transform);
 

@@ -18,13 +18,13 @@ AChunkBase::AChunkBase()
 
 	SetActorEnableCollision(true);
 	
-	//Mesh = CreateDefaultSubobject<UProceduralMeshComponent>("Mesh");
-	DynamicMesh = CreateDefaultSubobject<UDynamicMeshComponent>("DynamicMesh");
+	Mesh = CreateDefaultSubobject<UProceduralMeshComponent>("Mesh");
+	//DynamicMesh = CreateDefaultSubobject<UDynamicMeshComponent>("DynamicMesh");
 	Noise = new FastNoiseLite();	
 
-	//Mesh->SetCastShadow(false);
+	Mesh->SetCastShadow(false);
 
-	SetRootComponent(DynamicMesh);
+	SetRootComponent(Mesh);
 }
 
 // Called when the game starts or when spawned
@@ -55,34 +55,37 @@ void AChunkBase::GenerateHeightMap()
 
 void AChunkBase::ApplyMesh()
 {
-	//Mesh->SetMaterial(0, Material);
+	Mesh->SetMaterial(0, Material);
 
 	// add basic vertices if there are none
-	if(DynamicMeshDataHolder.VertexCount() <= 0)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("EMPTY"));
-	}
+	// if(DynamicMeshDataHolder.VertexCount() <= 0)
+	// {
+	// 	UE_LOG(LogTemp, Warning, TEXT("EMPTY"));
+	// }
 	
 	// enable proper UVs
-	DynamicMeshDataHolder.EnableAttributes();
-	DynamicMeshDataHolder.EnableVertexUVs(FVector2f::Zero());
-	CopyVertexUVsToOverlay(DynamicMeshDataHolder, *DynamicMeshDataHolder.Attributes()->PrimaryUV()); // assuming we already generated vertices
-	CopyVertexNormalsToOverlay(DynamicMeshDataHolder, *DynamicMeshDataHolder.Attributes()->PrimaryNormals());
-	
-	// enable Complex As Simple collision
-	DynamicMesh->bEnableComplexCollision = true;
-	DynamicMesh->CollisionType = CTF_UseComplexAsSimple;
-	DynamicMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	DynamicMesh->SetCollisionProfileName(UCollisionProfile::BlockAllDynamic_ProfileName);
-
-	// set material
-	DynamicMesh->SetMaterial(0, Material);
+	// DynamicMeshDataHolder.EnableAttributes();
+	// DynamicMeshDataHolder.EnableVertexUVs(FVector2f::Zero());
+	// CopyVertexUVsToOverlay(DynamicMeshDataHolder, *DynamicMeshDataHolder.Attributes()->PrimaryUV()); // assuming we already generated vertices
+	// CopyVertexNormalsToOverlay(DynamicMeshDataHolder, *DynamicMeshDataHolder.Attributes()->PrimaryNormals());
+	//
+	// // enable Complex As Simple collision
+	// DynamicMesh->bEnableComplexCollision = true;
+	// DynamicMesh->CollisionType = CTF_UseComplexAsSimple;
+	// DynamicMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	// DynamicMesh->SetCollisionProfileName(UCollisionProfile::BlockAllDynamic_ProfileName);
+	//
+	// //UMaterialInstanceDynamic DynamicMaterial = UMaterialInstanceDynamic::Create(Material, this);
+	//
+	//
+	// // set material
+	// DynamicMesh->SetMaterial(0, Material);
 	
 	// create our mesh
-	DynamicMesh->SetMesh(MoveTemp(DynamicMeshDataHolder));
+	//DynamicMesh->SetMesh(MoveTemp(DynamicMeshDataHolder));
 	
-	//Mesh->CreateMeshSection(0, MeshData.Vertices, MeshData.Triangles, MeshData.Normals, MeshData.UVs,
-	//	MeshData.Colors, TArray<FProcMeshTangent>() , true);
+	Mesh->CreateMeshSection(0, MeshData.Vertices, MeshData.Triangles, MeshData.Normals, MeshData.UVs,
+		MeshData.Colors, TArray<FProcMeshTangent>() , true);
 }
 
 void AChunkBase::ClearMeshData()

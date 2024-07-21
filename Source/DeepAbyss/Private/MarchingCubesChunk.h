@@ -22,6 +22,7 @@ public:
 	bool Interpolate = true;
 
 	TArray<float> VoxelValues;
+	TArray<FColor> VoxelColors;
 	
 	int GetVoxelIndex(int X, int Y, int Z) const;
 

@@ -11,46 +11,45 @@
 #include "Operations/MeshBoolean.h"
 
 void UVoxelFunctionLibrary::CarveRadiusAtLocation(AChunkWorld* World, float Radius, FVector Location, TArray<AChunkBase*> OverlappingChunks,
-                                                  UMaterialInstance* CarveMaterial)
+                                                  bool ChangeColor, FColor CarveColor)
 {
-	TSet<AChunkBase*> ChunksToUpdate;
+	TSet<AChunkBase*> ChunksToUpdate; // avoid duplicates
 
+	// for each OverlappingChunk, find its neighbours
 	for (AChunkBase* Chunk : OverlappingChunks)
 	{
 		if (!Chunk) continue;
 		FIntVector ChunkSize = Chunk->ChunkSize;
 	
-		AMarchingCubesChunk* MarchingCubesChunk = Cast<AMarchingCubesChunk>(Chunk);
-		if (!MarchingCubesChunk) continue;
-	
 		ChunksToUpdate.Add(Chunk);
 	
-		// Get the chunk's coordinates
+		// chunk coords
 		FVector ChunkLocation = Chunk->GetActorLocation();
 		int ChunkX = FMath::RoundToInt(ChunkLocation.X / (ChunkSize.X * 100));
 		int ChunkY = FMath::RoundToInt(ChunkLocation.Y / (ChunkSize.Y * 100));
 	
-		// Get neighboring chunks
+		// get neighbouring chunks
 		TArray<AChunkBase*> NeighboringChunks = World->GetNeighboringChunks(ChunkX, ChunkY);
 		for (AChunkBase* Neighbor : NeighboringChunks)
 		{
-			ChunksToUpdate.Add(Neighbor);
+			ChunksToUpdate.Add(Neighbor); // add them
 		}
 	}
 
 
-    // Process all chunks to update
+    // update all chunks
     for (AChunkBase* Chunk : ChunksToUpdate)
     {
         if (!Chunk) continue;
-
+	
         AMarchingCubesChunk* MarchingCubesChunk = Cast<AMarchingCubesChunk>(Chunk);
         if (!MarchingCubesChunk) continue;
 
-        FVector ChunkLocation = Chunk->GetActorLocation();
+    	// get chunk and hit location
+        FVector ChunkLocation = MarchingCubesChunk->GetActorLocation();
         FVector LocalLocation = Location - ChunkLocation;
 
-        bool bNeedsUpdate = false;
+        bool Modified = false;
 	
         // Check if this chunk intersects with the carving sphere
         for (int x = 0; x <= MarchingCubesChunk->ChunkSize.X; ++x)
@@ -60,78 +59,39 @@ void UVoxelFunctionLibrary::CarveRadiusAtLocation(AChunkWorld* World, float Radi
                 for (int z = 0; z <= MarchingCubesChunk->ChunkSize.Z; ++z)
                 {
                 	FVector VoxelPosition = FVector(x, y, z) * 100;
-                	
-                	float DistanceSquared = FVector::DistSquared(VoxelPosition, LocalLocation);
-                	float RadiusSquared = FMath::Square(Radius);
+
+                	// distance and radius
+                	float Distance = FVector::Dist(VoxelPosition, LocalLocation);
                     
-                    if (DistanceSquared <= RadiusSquared)
+					int VoxelIndex = MarchingCubesChunk->GetVoxelIndex(x, y, z);
+
+                    if (Distance <= Radius)
                     {
-                        int VoxelIndex = MarchingCubesChunk->GetVoxelIndex(x, y, z);
+                    	// remove voxels                        
                         MarchingCubesChunk->VoxelValues[VoxelIndex] -= 100;
-                        bNeedsUpdate = true;
+
+                        Modified = true;
                     }
+
+					// change VoxelColors
+					if(ChangeColor) 
+					{
+						float ColorRadius = Radius * 2.0f;
+						if(Distance <= ColorRadius) {
+							MarchingCubesChunk->VoxelColors[VoxelIndex] = CarveColor;
+						}
+					}
                 }
             }
         }
 
-        if (bNeedsUpdate)
+    	// regenerate the mesh
+        if (Modified)
         {
             MarchingCubesChunk->GenerateMesh();
-            MarchingCubesChunk->ApplyMesh();
-        }
+            MarchingCubesChunk->ApplyMesh();			
+        }		
     }
-}
-
-
-void UVoxelFunctionLibrary::GenerateSphere(FDynamicMesh3& Mesh, float Radius, FVector LocalLocation)
-{
-	// Function to generate a sphere mesh at a given location
-	const int NumSegments = 16; // Increase for a more detailed sphere
-
-	Mesh.Clear();
-	UE::Geometry::FDynamicMeshEditor Editor(&Mesh);
-
-	// Loop to create sphere vertices and faces
-	for (int lat = 0; lat <= NumSegments; ++lat)
-	{
-		float theta = lat * PI / NumSegments;
-		float sinTheta = FMath::Sin(theta);
-		float cosTheta = FMath::Cos(theta);
-
-		for (int lon = 0; lon <= NumSegments; ++lon)
-		{
-			float phi = lon * 2 * PI / NumSegments;
-			float sinPhi = FMath::Sin(phi);
-			float cosPhi = FMath::Cos(phi);
-
-			FVector3d Position(
-				LocalLocation.X + Radius * sinTheta * cosPhi,
-				LocalLocation.Y + Radius * sinTheta * sinPhi,
-				LocalLocation.Z + Radius * cosTheta
-			);
-
-			int32 VertexID = Mesh.AppendVertex(Position);
-
-			// Skip creating faces for the last latitude line
-			if (lat < NumSegments && lon < NumSegments)
-			{
-				int32 NextLat = (lat + 1);
-				int32 NextLon = (lon + 1);
-
-				int32 A = lat * (NumSegments + 1) + lon;
-				int32 B = NextLat * (NumSegments + 1) + lon;
-				int32 C = NextLat * (NumSegments + 1) + NextLon;
-				int32 D = lat * (NumSegments + 1) + NextLon;
-
-				// Create two triangles for each quad face
-				Mesh.AppendTriangle(A, B, C);
-				Mesh.AppendTriangle(A, C, D);
-			}
-		}
-	}
-
-	// Ensure normals are computed for the generated mesh
-	UE::Geometry::FMeshNormals::InitializeMeshToPerTriangleNormals(&Mesh);
 }
 
 bool UVoxelFunctionLibrary::IsArrayEqualToElement(TArray<float> Arr, float Element)

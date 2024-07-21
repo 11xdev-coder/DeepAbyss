@@ -30,9 +30,12 @@ public:
 	UPROPERTY(EditInstanceOnly, Category = "Chunk World")
 	FIntVector ChunkSize = FIntVector(256, 256, 256);
 
-	UPROPERTY(EditInstanceOnly, Category = "Chunk World")
+	UPROPERTY(EditInstanceOnly, Category = "Appearance")
 	TObjectPtr<UMaterialInstance> ChunkMaterial;
 
+	UPROPERTY(EditAnywhere, Category = "Appearance")
+	FColor DefaultTintColor;
+	
 	UPROPERTY(EditInstanceOnly, Category = "Noise Settings")
 	float Frequency = 0.03f;
 

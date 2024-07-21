@@ -20,10 +20,9 @@ class UVoxelFunctionLibrary : public UBlueprintFunctionLibrary
 
 public:		
 	UFUNCTION(BlueprintCallable, Category = "Carving")
-	static void CarveRadiusAtLocation(AChunkWorld* World, float Radius, FVector Location, TArray<AChunkBase*> OverlappingChunks, UMaterialInstance* CarveMaterial);
-
-	static void GenerateSphere(FDynamicMesh3& Mesh, float Radius, FVector LocalLocation);
-
+	static void CarveRadiusAtLocation(AChunkWorld* World, float Radius, FVector Location, TArray<AChunkBase*> OverlappingChunks, 
+									bool ChangeColor, FColor CarveColor);
+	
 	UFUNCTION(BlueprintPure, Category = "Array")
 	static bool IsArrayEqualToElement(TArray<float> Arr, float Element);	
 

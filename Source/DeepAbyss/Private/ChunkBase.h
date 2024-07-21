@@ -29,7 +29,9 @@ public:
 	FIntVector ChunkSize = FIntVector(256, 256, 256);
 
 	float Frequency;
-	TObjectPtr<UMaterialInterface> Material;
+	TObjectPtr<UMaterialInstance> Material;
+
+	FColor DefaultTintColor;
 	
 	FChunkMeshData MeshData;
 
