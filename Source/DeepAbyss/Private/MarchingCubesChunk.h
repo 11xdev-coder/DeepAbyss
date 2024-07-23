@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "ChunkBase.h"
 #include "DynamicMesh/DynamicMesh3.h"
+#include "Minerals/MineralBase.h"
 #include "MarchingCubesChunk.generated.h"
 
 UCLASS()
@@ -22,7 +23,9 @@ public:
 	bool Interpolate = true;
 
 	TArray<float> VoxelValues;
+	TArray<AMineralBase*> VoxelMinerals;
 	TArray<FColor> VoxelColors;
+	TArray<int> VoxelHits;
 	
 	int GetVoxelIndex(int X, int Y, int Z) const;
 

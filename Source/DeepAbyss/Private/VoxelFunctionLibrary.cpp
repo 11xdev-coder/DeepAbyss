@@ -11,9 +11,10 @@
 #include "Operations/MeshBoolean.h"
 
 void UVoxelFunctionLibrary::CarveRadiusAtLocation(AChunkWorld* World, float Radius, FVector Location, TArray<AChunkBase*> OverlappingChunks,
-                                                  bool ChangeColor, FColor CarveColor)
+                                                  bool ChangeMineral, TSubclassOf<AMineralBase> Mineral)
 {
 	TSet<AChunkBase*> ChunksToUpdate; // avoid duplicates
+	bool CanMine = false; // additional flag for neighbouring chunks
 
 	// for each OverlappingChunk, find its neighbours
 	for (AChunkBase* Chunk : OverlappingChunks)
@@ -33,6 +34,11 @@ void UVoxelFunctionLibrary::CarveRadiusAtLocation(AChunkWorld* World, float Radi
 		for (AChunkBase* Neighbor : NeighboringChunks)
 		{
 			ChunksToUpdate.Add(Neighbor); // add them
+		}
+
+		if(CanMineAt(Chunk, Location))
+		{
+			CanMine = true;
 		}
 	}
 
@@ -59,26 +65,30 @@ void UVoxelFunctionLibrary::CarveRadiusAtLocation(AChunkWorld* World, float Radi
                 for (int z = 0; z <= MarchingCubesChunk->ChunkSize.Z; ++z)
                 {
                 	FVector VoxelPosition = FVector(x, y, z) * 100;
-
+     
                 	// distance and radius
                 	float Distance = FVector::Dist(VoxelPosition, LocalLocation);
                     
 					int VoxelIndex = MarchingCubesChunk->GetVoxelIndex(x, y, z);
-
+     
                     if (Distance <= Radius)
-                    {
-                    	// remove voxels                        
-                        MarchingCubesChunk->VoxelValues[VoxelIndex] -= 100;
+                    {                     
+                        MarchingCubesChunk->VoxelHits[VoxelIndex] += 1;
 
-                        Modified = true;
+						if(CanMine)
+						{
+							MarchingCubesChunk->VoxelValues[VoxelIndex] -= 1000;
+						}
+                    	Modified = true;
                     }
-
-					// change VoxelColors
-					if(ChangeColor) 
+     
+					// change VoxelColors to Mineral's color
+					if(ChangeMineral) 
 					{
 						float ColorRadius = Radius * 2.0f;
-						if(Distance <= ColorRadius) {
-							MarchingCubesChunk->VoxelColors[VoxelIndex] = CarveColor;
+						if(Distance <= ColorRadius)
+						{
+							MarchingCubesChunk->VoxelMinerals[VoxelIndex] = Mineral.GetDefaultObject();
 						}
 					}
                 }
@@ -93,6 +103,98 @@ void UVoxelFunctionLibrary::CarveRadiusAtLocation(AChunkWorld* World, float Radi
         }		
     }
 }
+
+AMineralBase* UVoxelFunctionLibrary::GetMineralAt(AChunkBase* Chunk, FVector Location)
+{
+	FVector VoxelGridLocation = GetVoxelGridCoords(Chunk->GetActorLocation(), Location);
+	
+	AMarchingCubesChunk* MarchingCubesChunk = Cast<AMarchingCubesChunk>(Chunk);
+	int VoxelIndex = MarchingCubesChunk->GetVoxelIndex(VoxelGridLocation.X, VoxelGridLocation.Y, VoxelGridLocation.Z);
+	
+	return MarchingCubesChunk->VoxelMinerals[VoxelIndex];
+}
+
+bool UVoxelFunctionLibrary::CanMineAt(AChunkBase* Chunk, FVector Location)
+{
+	AMarchingCubesChunk* MarchingCubesChunk = Cast<AMarchingCubesChunk>(Chunk);
+	
+	FVector VoxelGridLocation = GetVoxelGridCoords(Chunk->GetActorLocation(), Location);
+	int VoxelIndex = MarchingCubesChunk->GetVoxelIndex(VoxelGridLocation.X, VoxelGridLocation.Y, VoxelGridLocation.Z);
+	
+	AMineralBase* Mineral = GetMineralAt(Chunk, Location);
+
+	// if voxel's hits at Location are more than its Hardness -> true
+	if (MarchingCubesChunk->VoxelHits[VoxelIndex] >= Mineral->Hardness) return true;
+	
+	return false;
+}
+
+bool UVoxelFunctionLibrary::MineRadius(AMarchingCubesChunk* MarchingCubesChunk, FVector MineLocation, float MineRadius)
+{
+
+	FVector ChunkLocation = MarchingCubesChunk->GetActorLocation();
+	FVector LocalLocation = MineLocation - ChunkLocation;
+
+	bool ShouldUpdate = false;
+	
+	for (int x = 0; x <= MarchingCubesChunk->ChunkSize.X; ++x)
+	{
+		for (int y = 0; y <= MarchingCubesChunk->ChunkSize.Y; ++y)
+		{
+			for (int z = 0; z <= MarchingCubesChunk->ChunkSize.Z; ++z)
+			{
+				FVector VoxelPosition = FVector(x, y, z) * 100;
+     
+				// distance and radius
+				float Distance = FVector::Dist(VoxelPosition, LocalLocation);
+				float HitRadius = MineRadius * 0.7f;
+				
+				int VoxelIndex = MarchingCubesChunk->GetVoxelIndex(x, y, z);
+     
+				if (Distance <= HitRadius)
+				{
+					// add 1 hit                    
+					MarchingCubesChunk->VoxelHits[VoxelIndex] += 1;
+				}
+
+				if(CanMineAt(MarchingCubesChunk, MineLocation))
+				{
+					// remove voxels
+					if(Distance <= MineRadius)
+					{
+						MarchingCubesChunk->VoxelValues[VoxelIndex] -= 100;
+						ShouldUpdate = true;
+					}
+				}
+			}
+		}
+	}
+
+	return ShouldUpdate;
+}
+
+
+
+FName UVoxelFunctionLibrary::GetMineralName(AMineralBase* Mineral)
+{
+	if(Mineral)
+	{
+		return Mineral->MineralName;
+	}
+	return "ERR";
+}
+
+FVector UVoxelFunctionLibrary::GetVoxelGridCoords(FVector ChunkLocation, FVector HitLocation)
+{
+	FVector LocalLocation = HitLocation - ChunkLocation;
+
+	int LocalX = FMath::RoundToInt(LocalLocation.X / 100);
+	int LocalY = FMath::RoundToInt(LocalLocation.Y / 100);
+	int LocalZ = FMath::RoundToInt(LocalLocation.Z / 100);
+
+	return FVector(LocalX, LocalY, LocalZ);
+}
+
 
 bool UVoxelFunctionLibrary::IsArrayEqualToElement(TArray<float> Arr, float Element)
 {

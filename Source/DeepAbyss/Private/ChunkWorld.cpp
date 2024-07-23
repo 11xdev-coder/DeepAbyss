@@ -42,8 +42,8 @@ void AChunkWorld::BeginPlay()
 
 				SpawnedChunk->ChunkSize = ChunkSize;
 				SpawnedChunk->Frequency = Frequency;
-				SpawnedChunk->Material = ChunkMaterial;
-				SpawnedChunk->DefaultTintColor = DefaultTintColor;
+				SpawnedChunk->Material = DefaultMineral.GetDefaultObject()->Material;
+				SpawnedChunk->DefaultMineral = DefaultMineral.GetDefaultObject();
 			
 				UGameplayStatics::FinishSpawningActor(SpawnedChunk, Transform);
 

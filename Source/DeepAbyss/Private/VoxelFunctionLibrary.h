@@ -6,6 +6,7 @@
 #include "ChunkBase.h"
 #include "ChunkWorld.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
+#include "Minerals/MineralBase.h"
 #include "VoxelFunctionLibrary.generated.h"
 
 
@@ -21,11 +22,25 @@ class UVoxelFunctionLibrary : public UBlueprintFunctionLibrary
 public:		
 	UFUNCTION(BlueprintCallable, Category = "Carving")
 	static void CarveRadiusAtLocation(AChunkWorld* World, float Radius, FVector Location, TArray<AChunkBase*> OverlappingChunks, 
-									bool ChangeColor, FColor CarveColor);
+									bool ChangeMineral, TSubclassOf<AMineralBase> Mineral);
+
+	UFUNCTION(BlueprintPure, Category = "Voxels")
+	static AMineralBase* GetMineralAt(AChunkBase* Chunk, FVector Location);
+
+	UFUNCTION(BlueprintPure, Category = "Voxels")
+	static bool CanMineAt(AChunkBase* Chunk, FVector Location);
+
+	UFUNCTION(BlueprintCallable, Category = "Voxels")
+	static bool MineRadius(AMarchingCubesChunk* MarchingCubesChunk, FVector MineLocation, float MineRadius);
+
+	UFUNCTION(BlueprintPure, Category = "Mineral")
+	static FName GetMineralName(AMineralBase* Mineral);
 	
 	UFUNCTION(BlueprintPure, Category = "Array")
-	static bool IsArrayEqualToElement(TArray<float> Arr, float Element);	
+	static bool IsArrayEqualToElement(TArray<float> Arr, float Element);
 
+	static FVector GetVoxelGridCoords(FVector ChunkLocation, FVector HitLocation);
+	
 	// marching cubes data
 	const static int VertexOffset[8][3];
 

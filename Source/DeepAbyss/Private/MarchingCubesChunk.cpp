@@ -13,7 +13,9 @@
 AMarchingCubesChunk::AMarchingCubesChunk()
 {
 	VoxelValues.SetNum((ChunkSize.X + 1) * (ChunkSize.Y + 1) * (ChunkSize.Z + 1));
+	VoxelMinerals.SetNum((ChunkSize.X + 1) * (ChunkSize.Y + 1) * (ChunkSize.Z + 1));
 	VoxelColors.SetNum((ChunkSize.X + 1) * (ChunkSize.Y + 1) * (ChunkSize.Z + 1));
+	VoxelHits.SetNum((ChunkSize.X + 1) * (ChunkSize.Y + 1) * (ChunkSize.Z + 1)); // by default all zeros
 }
 
 void AMarchingCubesChunk::BeginPlay()
@@ -71,7 +73,7 @@ void AMarchingCubesChunk::GenerateHeightMap()
 			{
 				VoxelValues[GetVoxelIndex(x, y, z)] = Noise->GetNoise(x + ActorLocation.X,
 																		y + ActorLocation.Y, z + ActorLocation.Z);
-				VoxelColors[GetVoxelIndex(x, y, z)] = DefaultTintColor; // by default use default color
+				VoxelMinerals[GetVoxelIndex(x, y, z)] = DefaultMineral; // by default use default mineral
 			}
 		}
 	}
@@ -112,8 +114,12 @@ void AMarchingCubesChunk::March(int X, int Y, int Z, const float CubeVoxelValues
 			EdgeVertices[i] = VertexPosition;
 
 			// slowly interp between colors
-			FColor ColorA = VoxelColors[GetVoxelIndex(X + VertexOffset[EdgeConnection[i][0]][0], Y + VertexOffset[EdgeConnection[i][0]][1], Z + VertexOffset[EdgeConnection[i][0]][2])];
-            FColor ColorB = VoxelColors[GetVoxelIndex(X + VertexOffset[EdgeConnection[i][1]][0], Y + VertexOffset[EdgeConnection[i][1]][1], Z + VertexOffset[EdgeConnection[i][1]][2])];
+			FColor ColorA = VoxelMinerals[GetVoxelIndex(X + VertexOffset[EdgeConnection[i][0]][0],
+				Y + VertexOffset[EdgeConnection[i][0]][1], Z + VertexOffset[EdgeConnection[i][0]][2])]->MineralColor;
+			
+            FColor ColorB = VoxelMinerals[GetVoxelIndex(X + VertexOffset[EdgeConnection[i][1]][0],
+            	Y + VertexOffset[EdgeConnection[i][1]][1], Z + VertexOffset[EdgeConnection[i][1]][2])]->MineralColor;
+			
 			EdgeColors[i] = FLinearColor::LerpUsingHSV(FLinearColor(ColorA), FLinearColor(ColorB), Offset);
 		}
 	}
@@ -154,21 +160,6 @@ void AMarchingCubesChunk::March(int X, int Y, int Z, const float CubeVoxelValues
 			Color2,
 			Color3
 		});
-
-		
-		// vertices
-		int32 VIndex1 = DynamicMeshDataHolder.AppendVertex(V1);
-		int32 VIndex2 = DynamicMeshDataHolder.AppendVertex(V2);
-		int32 VIndex3 = DynamicMeshDataHolder.AppendVertex(V3);
-
-		
-		DynamicMeshDataHolder.AppendTriangle(VertexCount + TriangleOrder[0],
-			VertexCount + TriangleOrder[1],
-			VertexCount + TriangleOrder[2]);
-
-		DynamicMeshDataHolder.SetVertexNormal(VIndex1, (FVector3f)Normal);
-		DynamicMeshDataHolder.SetVertexNormal(VIndex2, (FVector3f)Normal);
-		DynamicMeshDataHolder.SetVertexNormal(VIndex3, (FVector3f)Normal);
 
 		VertexCount += 3;
 	}

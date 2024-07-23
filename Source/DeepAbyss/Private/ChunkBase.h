@@ -8,6 +8,7 @@
 #include "GameFramework/Actor.h"
 #include "Components/DynamicMeshComponent.h"
 #include "DynamicMesh/DynamicMesh3.h"
+#include "Minerals/MineralBase.h"
 #include "ChunkBase.generated.h"
 
 class URealtimeMeshComponent;
@@ -31,7 +32,7 @@ public:
 	float Frequency;
 	TObjectPtr<UMaterialInstance> Material;
 
-	FColor DefaultTintColor;
+	AMineralBase* DefaultMineral;
 	
 	FChunkMeshData MeshData;
 
