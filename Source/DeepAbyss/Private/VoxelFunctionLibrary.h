@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "ChunkBase.h"
 #include "ChunkWorld.h"
+#include "MarchingCubesChunk.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "Minerals/MineralBase.h"
 #include "VoxelFunctionLibrary.generated.h"

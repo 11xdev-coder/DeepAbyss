@@ -174,7 +174,6 @@ bool UVoxelFunctionLibrary::MineRadius(AMarchingCubesChunk* MarchingCubesChunk, 
 }
 
 
-
 FName UVoxelFunctionLibrary::GetMineralName(AMineralBase* Mineral)
 {
 	if(Mineral)
