@@ -39,7 +39,7 @@ public:
 	
 	UFUNCTION(BlueprintPure, Category = "Array")
 	static bool IsArrayEqualToElement(TArray<float> Arr, float Element);
-
+	
 	static FVector GetVoxelGridCoords(FVector ChunkLocation, FVector HitLocation);
 	
 	// marching cubes data

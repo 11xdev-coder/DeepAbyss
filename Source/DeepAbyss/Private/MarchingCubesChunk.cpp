@@ -4,7 +4,6 @@
 #include "MarchingCubesChunk.h"
 
 #include "ProceduralMeshComponent.h"
-#include "RealtimeMeshSimple.h"
 #include "VoxelFunctionLibrary.h"
 #include "Components/BoxComponent.h"
 #include "DeepAbyss/FastNoiseLite.h"

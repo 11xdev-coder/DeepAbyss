@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0",
+	"FriendlyName": "HidePinsInBreakStruct",
+	"Description": "Hides all unconnected pins in \"Break Struct\" nodes",
+	"Category": "Other",
+	"CreatedBy": "Qsef",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": false,
+	"IsBetaVersion": false,
+	"IsExperimentalVersion": false,
+	"Installed": false,
+	"Modules": [
+		{
+			"Name": "HidePinsInBreakStruct",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	]
+}
