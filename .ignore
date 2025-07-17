@@ -3,10 +3,7 @@
 /.vs
 /.vscode
 /Content
-/DerivedDataCache
 /Intermediate
 /Saved
 /Plugins/Developer/RiderLink/Intermediate
-/Plugins/RealtimeMeshComponent-master/.github
-/Plugins/RealtimeMeshComponent-master/Content
-/Plugins/RealtimeMeshComponent-master/Intermediate
+/Plugins/HidePinsInBreakStruct/Intermediate
